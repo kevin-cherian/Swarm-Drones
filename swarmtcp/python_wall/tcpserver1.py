@@ -2,19 +2,15 @@ import SocketServer
 import sys 
 import signal
 
-##########thread for listening for dronekkit
-def recv_dronekit():
-    while True:
-        data1, addr1 = sock2.recvfrom(1)
-        #print data1,
-        sock1.sendto(data1, ("192.168.0.6",2808))
+data_from_apm = []
+data_from_dronekit = [] 
         
 #.......................key intrrupt...............
 def signal_handler(signal, frame):
         print('######program terminated######')
-        sock1.close()
-        sock2.close()
-        
+        #server.shutdown()
+        server1.server_close()
+        #server2.server_close()               
         sys.exit(0)
 
 
@@ -32,18 +28,40 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 
     def handle(self):
         # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
-        print "{} wrote:".format(self.client_address[0])
-        print self.data
-        # just send back the same data, but upper-cased
-        self.request.sendall(self.data.upper())
+        global data_from_apm
+        
+        if self.client_address[0] ==  "192.168.0.3":   
+            
+            data1 = self.request.recv(2048)
+            lst = data1.split()#lst is list of integer strings
+            print lst
+            data_from_apm  = data_from_apm + lst
+            self.request.sendall('1')
+            
+        elif self.client_address[0] ==  "192.168.0.5":
+            final_packet = ""
+            data2 = self.request.recv(2048)
+            for int_str in data_from_apm:
+                
 
+                final_packet = final_packet + (chr(int(int_str)))#int-str -> int -> char, then write to the drone_kit client
+            
+            self.request.sendall(final_packet)    
+            data_from_apm = []#we have cleaned everything in data_from_apm buffer list
+            
+        # just send back the same data, but upper-cased
+           
+            
+
+                
 if __name__ == "__main__":
 
-    HOST, PORT = "192.168.43.102", 9998
+    HOST, PORT = "192.168.0.5", 9996
+    PORT2 = 9998
     # Create the server, binding to localhost on port 9999
-    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
-
+    server1 = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    #server2 = SocketServer.TCPServer((HOST, PORT2), MyTCPHandler)
     # Activate the server; this will keep running until you
     # interrupt the program with Ctrl-C
-    server.serve_forever()
+    server1.serve_forever()
+    #server2.serve_forever()   
