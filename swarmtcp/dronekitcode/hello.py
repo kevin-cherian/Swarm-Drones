@@ -1,7 +1,7 @@
 from dronekit import connect, VehicleMode
-connection_string = 'tcp:192.168.43.102:9999'
+connection_string = 'tcp:192.168.0.5:9999'
 print("Connecting to vehicle on: %s" % (connection_string,))
-vehicle = connect(connection_string, wait_ready = True )
+vehicle = connect(connection_string, wait_ready = True, heartbeat_timeout = 10000 )
 while True:
         print ". "
 
